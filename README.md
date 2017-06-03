@@ -8,4 +8,4 @@ This project visualizes the size of a code base. It visualizes the metrics: line
 1. In your browser goto `localhost:8000`
 
 # example output
-![example](./images/example.png)
+<img src="./images/example.png" width="600">
