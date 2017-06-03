@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Code Size</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <link type="text/css" rel="stylesheet" href="stylesheets/bootstrap.min.css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="stylesheets/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href='http://fonts.googleapis.com/css?family=Rosario:400,700' rel='stylesheet' type='text/css'>
+    <link type="text/css" rel="stylesheet" href="stylesheets/style.css"/>
+    <style>
+      .legend {                                                   
+        font-size: 12px;                                          
+      }                                                           
+      rect {                                                      
+        stroke-width: 2;                                          
+      }
+      .percentage {
+        font-size: 12px;
+        color: black;
+      }
+    </style>
+
+  </head>
+  <body>
+  <div align="center">
+    <h1>Code Size</h1>
+    <hr>
+    <div id="chart"></div>
+    <script type="text/javascript" src="libraries/d3/d3.js"></script>
+    <script>
+      (function(d3) {
+        'use strict';
+
+        // REMOVED var data = ...
+
+        var width = 360;
+        var height = 360;
+        var radius = Math.min(width, height) / 2;
+        var labelradius = radius + 30; // radius for label anchor
+        var donutWidth = 75;
+        var legendRectSize = 18;
+        var legendSpacing = 4;
+        var percentageFormat = d3.format(".1%");
+        var color = d3.scaleOrdinal(d3.schemeCategory20b);
+
+        var svg = d3.select('#chart')
+          .append('svg')
+          .attr('width', width)
+          .attr('height', height)
+          .append('g')
+          .attr('transform', 'translate(' + (width / 2) +
+            ',' + (height / 2) + ')');
+
+        var arc = d3.arc()
+          .innerRadius(radius - donutWidth)
+          .outerRadius(radius);
+
+        var label = d3.arc()
+          .outerRadius(radius - donutWidth/2)
+          .innerRadius(radius - donutWidth/2);          
+          
+        var pie = d3.pie()
+          .value(function(d) { return d.count; })
+          .sort(null);
+
+        d3.csv('codesize.csv', function(error, dataset) {           // NEW
+          dataset.forEach(function(d) {                             // NEW
+            d.count = +d.count;                                     // NEW
+          });                                                       // NEW
+
+          var total = d3.sum(dataset, function(d) { 
+            return d.count; 
+          });
+
+          dataset.forEach(function(d) {
+            d.percentage = d.count  / total;
+          });
+
+          var path = svg.selectAll('path')
+            .data(pie(dataset))
+            .enter().append("g")
+            
+          path.append('path')
+            .attr('d', arc)
+            .attr('fill', function(d, i) {
+              return color(d.data.label);
+            });
+
+           
+          path.append('text')
+            .attr("transform", function(d) {
+               return "translate(" + label.centroid(d) + ")";
+            })
+            .attr("dy", ".35em")
+            .style("fill", "White")
+            .text(function(d) {
+               return percentageFormat(d.data.percentage);
+            });
+            
+          var legend = svg.selectAll('.legend')
+            .data(color.domain())
+            .enter()
+            .append('g')
+            .attr('class', 'legend')
+            .attr('transform', function(d, i) {
+              var height = legendRectSize + legendSpacing;
+              var offset =  height * color.domain().length / 2;
+              var horz = -2 * legendRectSize;
+              var vert = i * height - offset;
+              return 'translate(' + horz + ',' + vert + ')';
+            });
+
+          legend.append('rect')
+            .attr('width', legendRectSize)
+            .attr('height', legendRectSize)
+            .style('fill', color)
+            .style('stroke', color);
+
+          legend.append('text')
+            .attr('x', legendRectSize + legendSpacing)
+            .attr('y', legendRectSize - legendSpacing)
+            .text(function(d) { return d; });
+
+        });                                                         // NEW
+
+      })(window.d3);
+    </script>
+    </div>
+  </body>
+</html>
